@@ -1,0 +1,185 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: vastly_gateway
+
+  ## 数据库配置
+  datasource:
+    druid:
+      stat-view-servlet:
+        loginUsername: root
+        loginPassword: root
+    dynamic:
+      datasource:
+        # 主库
+        master:
+          username: root
+          password: My.931206
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://101.43.7.108:3306/vastly_gateway_console?useUnicode=true&useUnicode=true&characterEncoding=UTF-8&charset=utf8&useOldAliasMetadataBehavior=true&useSSL=false&serverTimezone=Asia/Shanghai
+          druid: #以下均为默认值
+            initial-size: 3
+            max-active: 8
+            min-idle: 2
+            max-wait: -1
+            min-evictable-idle-time-millis: 30000
+            max-evictable-idle-time-millis: 30000
+            time-between-eviction-runs-millis: 0
+            validation-query: select 1
+            validation-query-timeout: -1
+            test-on-borrow: false
+            test-on-return: false
+            test-while-idle: true
+            pool-prepared-statements: true
+            filters: stat,wall
+            share-prepared-statements: true
+        # 从库
+        slave_1:
+          username: root
+          password: My.931206
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://101.43.7.108:3306/vastly_nacos_console?useUnicode=true&useUnicode=true&characterEncoding=UTF-8&charset=utf8&useOldAliasMetadataBehavior=true&useSSL=false&serverTimezone=Asia/Shanghai
+          druid: #以下均为默认值
+            initial-size: 3
+            max-active: 8
+            min-idle: 2
+            max-wait: -1
+            min-evictable-idle-time-millis: 30000
+            max-evictable-idle-time-millis: 30000
+            time-between-eviction-runs-millis: 0
+            validation-query: select 1
+            validation-query-timeout: -1
+            test-on-borrow: false
+            test-on-return: false
+            test-while-idle: true
+            pool-prepared-statements: true
+            filters: stat,wall
+            share-prepared-statements: true
+
+  ## redis
+  redis:
+    host: 101.43.7.108
+    password: reDis.931206
+    port: 6379
+    # Redis 连接超时时间，单位：毫秒。
+    timeout: 10000
+    #
+    readtimeout: 10000
+    # Redis 数据库号，默认为 0 。
+    database: 0
+    # 对应 RedisProperties.Jedis 内部类
+    pool:
+      # 对应 RedisProperties.Jedis 内部类
+      max-active: 8
+      # 默认连接数最小空闲的连接数，默认为 8 。使用负数表示没有限制。
+      max-idle: 8
+      # 默认连接数最小空闲的连接数，默认为 8 。使用负数表示没有限制。
+      min-idle: 1
+      # 连接池最大阻塞等待时间，单位：毫秒。默认为 -1 ，表示不限制。
+      max-wait: 10000
+
+
+  data:
+    mongodb:
+      host: 101.43.7.108
+      port: 27017
+      database: vastly_gateway_log
+      # 登录认证的逻辑库名
+      authentication-database: admin
+      username: admin
+      password: mongO.931206
+
+
+hystrix:
+  command:
+     fallbackcmd:
+       execution:
+         isolation:
+           thread:
+             timeoutInMilliseconds: 5000
+
+
+
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: trace
+        http:
+          server:
+            reactive: debug
+        web:
+          reactive: debug
+    reactor:
+      netty: debug
+
+
+# 日志配置
+#logging.level.org.springframework.cloud.gateway=trace
+#  logging.level.org.springframework.http.server.reactive=debug
+#  logging.level.org.springframework.web.reactive=debug
+#  logging.level.reactor.netty=debug
+  
+  # actuator 监控 http://localhost:7201/actuator/gateway/routes
+  #  management.endpoints.web.exposure.include=*
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+
+mybatis:
+  configuration:
+    logImpl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+#ribbon读取超时时间，接口处理时间，不包括建立连接时间
+ribbon:
+  #ribbon请求连接时间
+  ConnectTimeout: 3000
+  MaxAutoRetries: 1
+  MaxAutoRetriesNextServer: 1
+  #网关默认开启重试，此属性设置为false 只对GET请求重试，保证幂等性
+  OkToRetryOnAllOperations: false
+  ReadTimeout: 60000
+  ServerListRefreshInterval: 3000
+
+restTemplate:
+  # rest客户端读超时设置
+  ReadTimeout: 30000
+  # rest客户端连接超时设置
+  ConnectTimeout: 5000
+  # 连接不够用的等待时间，不宜过长，必须设置，比如连接不够用时，时间过长将是灾难性的
+  restConnectionRequestTimeout: 30000
+  # 设置总连接数
+  resPollMaxTotal: 200
+  # 设置同路由的并发数
+  resPollMaxPerRoute: 100
+  #
+  restTimeToLive: 60
+
+# 线程池配置
+thread:
+  pool:
+    ## 该方法用来设置线程池中,任务的等待时间,如果超过这个时间还没有销毁
+    ## 就强制销毁,以确保应用最后能够被关闭,而不是阻塞住。
+    awaitTerminationSeconds: 60
+    ## 核心线程数
+    corePoolSize: 10
+    ## 允许线程的空闲时间,当超过了核心线程之外的线程,在空闲时间到达之后会被销毁
+    keepAliveSeconds: 5
+    ## 线程池最大的线程数，只有在缓冲队列满了之后，才会申请超过核心线程数的线程
+    maxPoolSize: 20
+    ## 用来缓冲执行任务的队列
+    queueCapacity: 512
+    ## 该方法用来设置线程池关闭的时候等待所有任务都完成后,
+    ## 再继续销毁其他的Bean，这样这些异步任务的销毁就会先于数据库连接池对象的销毁。
+    waitForTasksToCompleteOnShutdown: true
+
+
+
+
+
