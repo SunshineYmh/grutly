@@ -117,6 +117,17 @@ public class DateUtils {
     }
 
     /**
+     *  时间戳转日期
+     * @param timeStamp
+     * @return
+     */
+    public static String conversionTime(long timeStamp) {
+        //转换
+        String time = dateTimeFormat.format(new Date(timeStamp));
+        return time;
+    }
+
+    /**
      * Date 转 String
      * 格式: yyyy/MM/dd
      *

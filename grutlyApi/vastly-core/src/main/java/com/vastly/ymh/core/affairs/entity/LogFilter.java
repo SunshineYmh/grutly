@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
 /**
@@ -26,9 +27,11 @@ public class LogFilter {
     private LEVEL level;
 
     private String sessionId;//会话id
+    @Field
     private String routeId;//路由id
-    private long requestDate;//请求系统开始时间
-    private long responseDate;//请求系统结束时间
+    private long startDate;//请求系统开始时间
+    private long endDate;//请求系统结束时间
+    @Field
     private String timeStamp;
     private String requestIp;//请求者ip
     private String requestUri;
@@ -56,6 +59,8 @@ public class LogFilter {
     private String errorMessage;
     private String exceptionMessage;
 
+    private int  pageNum;
+    private int pageSize;//
 
 
 

@@ -6,6 +6,7 @@ import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.communtion.HttpRequestCommuntion;
 import com.vastly.affairs.hlht.exception.vastlyExceptionMessage;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
+import com.vastly.affairs.util.DateUtils;
 import com.vastly.ymh.core.affairs.entity.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
 import com.vastly.affairs.util.FormDataAnalysisUtil;
@@ -107,8 +108,8 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
             httpRequestCommuntion = (HttpRequestCommuntion) SpringContextUtil.getBean("httpRequestCommuntion", HttpRequestCommuntion.class);
         }
         //初始化请求信息
-
-        long startTime = System.currentTimeMillis();
+        Date date = new Date();
+        long startTime = date.getTime(); //System.currentTimeMillis();
         String uuid = generatedKey.generatorKey();
         log.info("=================================请求连接开始【" + uuid + "】=======================================");
         Route route = getGatewayRoute(exchange);
@@ -123,8 +124,8 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
         logDTO.setHostName(IpUtils.getHostName());
         logDTO.setServerIp(IpUtils.getLocalIp());
         logDTO.setRequestIp(IpUtils.getClientIp(request));
-        logDTO.setTimeStamp(ZonedDateTime.now(ZoneOffset.of("+08:00")).toString());
-        logDTO.setRequestDate(startTime);
+        logDTO.setTimeStamp(DateUtils.dateTimeToString(date));
+        logDTO.setStartDate(startTime);
         logDTO.setRouteId(route.getId());
 
         logDTO.setId(requestId.get());
@@ -319,9 +320,9 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                 logDTO.setStatus(httpStatus.value());
                 log.info(logDTO.getId()+" :响应信息处理》》》》》》》》》》》》》》》");
                 long responseDate = System.currentTimeMillis();
-                logDTO.setResponseDate(responseDate);
+                logDTO.setEndDate(responseDate);
                 // 计算执行时间
-                long executeTime = (responseDate - logDTO.getRequestDate());
+                long executeTime = (responseDate - logDTO.getStartDate());
                 logDTO.setExecuteTime(executeTime);
                 if ( body instanceof Flux) {
                     Flux<? extends DataBuffer> fluxBody = Flux.from(body);

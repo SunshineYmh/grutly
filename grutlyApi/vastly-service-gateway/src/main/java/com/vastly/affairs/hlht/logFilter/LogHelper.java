@@ -9,6 +9,7 @@ import com.vastly.affairs.hlht.communtion.SpringContextUtil;
 import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.constant.ContentType;
 import com.vastly.affairs.hlht.constant.HeaderConstant;
+import com.vastly.affairs.util.DateUtils;
 import com.vastly.affairs.util.FileUtils;
 import com.vastly.affairs.util.IpUtils;
 import com.vastly.ymh.core.affairs.entity.LogFilter;
@@ -398,8 +399,9 @@ public class LogHelper {
         logDTO.setHostName(IpUtils.getHostName());
         logDTO.setServerIp(IpUtils.getLocalIp());
         logDTO.setRequestIp(IpUtils.getClientIp(request));
-        logDTO.setTimeStamp(ZonedDateTime.now(ZoneOffset.of("+08:00")).toString());
-        logDTO.setRequestDate(getStartTime( headers));
+        long time = getStartTime( headers);
+        logDTO.setTimeStamp(DateUtils.conversionTime(time));
+        logDTO.setStartDate(time);
         logDTO.setRouteId(route==null?"":route.getId());
 
         logDTO.setId(getREQUEST_ID( headers));
@@ -419,14 +421,15 @@ public class LogHelper {
         //响应
         logDTO.setResponseContentType(MediaType.APPLICATION_JSON.toString());
         logDTO.setResponseBody(responseBody);
+        logDTO.setResponseBodySize(responseBody.getBytes(Charset.forName("UTF-8")).length);
         logDTO.setStatus(code);
         logDTO.setErrorMessage(errorMessage);
         logDTO.setExceptionMessage(exceptionMessage);
 
         long responseDate = System.currentTimeMillis();
-        logDTO.setResponseDate(responseDate);
+        logDTO.setEndDate(responseDate);
         // 计算执行时间
-        long executeTime = (responseDate - logDTO.getRequestDate());
+        long executeTime = (responseDate - logDTO.getStartDate());
         logDTO.setExecuteTime(executeTime);
         return logDTO;
     }
