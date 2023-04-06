@@ -76,8 +76,6 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
 
     @Autowired
     private GeneratedKey generatedKey;
-    @Autowired
-    private CacheManager cacheManager;
     //请求业务逻辑处理区域
     @Autowired
     private HttpRequestCommuntion httpRequestCommuntion;

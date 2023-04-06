@@ -23,3 +23,5 @@
 hs_err_pid*
 .idea/
 grutlyApi/vastly-service-gateway/target/
+grutlyApi/vastly-core/vastly-core.iml
+*.iml

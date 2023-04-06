@@ -31,6 +31,7 @@ public class VastlyGatewayLogService {
         if(result != null){
             DataResult.success();
         }else{
+            log.error("存储日志失败》》》》》");
             DataResult.error(500,"保存数据失败！");
         }
     }
