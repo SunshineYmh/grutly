@@ -87,8 +87,8 @@ spring:
       database: vastly_gateway_log
       # 登录认证的逻辑库名
       authentication-database: admin
-      username: admin
-      password: mongO.931206
+      username: ymhGrutly
+      password: yG.931206
 
 
 hystrix:

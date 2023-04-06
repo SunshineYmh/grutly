@@ -2,10 +2,9 @@ package com.vastly.affairs.hlht.exception;
 
 
 import com.alibaba.fastjson.JSONObject;
-import com.netflix.hystrix.exception.HystrixRuntimeException;
 import com.vastly.affairs.hlht.communtion.SpringContextUtil;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
-import com.vastly.affairs.hlht.logFilter.LogFilter;
+import com.vastly.ymh.core.affairs.entity.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

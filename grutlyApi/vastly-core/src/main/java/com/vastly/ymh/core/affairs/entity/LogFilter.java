@@ -1,37 +1,35 @@
-package com.vastly.affairs.hlht.logFilter;
+package com.vastly.ymh.core.affairs.entity;
 
 
-import com.alibaba.fastjson.JSONObject;
-import com.vastly.affairs.util.FormDataAnalysisUtil;
-import com.vastly.affairs.util.IpUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.Map;
 
 /**
  * 日志实体类，方便后续接入ELK
  */
-@Configuration
+@NoArgsConstructor
 @AllArgsConstructor
+@Accessors(chain = true)
+@Document("vastly_gateway_log")
 @Data
 public class LogFilter {
+
+    @Id// 必须指定id列
+    private String id;//请求系统流水号
 
     private TYPE logType;
     private LEVEL level;
 
     private String sessionId;//会话id
-    private String requestId;//请求系统流水号
     private String routeId;//路由id
     private long requestDate;//请求系统开始时间
     private long responseDate;//请求系统结束时间
+    private String timeStamp;
     private String requestIp;//请求者ip
     private String requestUri;
     private String requestPath;
@@ -45,7 +43,6 @@ public class LogFilter {
     private String requestMethod;//
     private String schema;// 请求协议
     private String hostName;
-    private String timeStamp;
     private String serverIp;
     private long executeTime; //执行时间，单位秒
     private String requestQueryParams;
@@ -62,21 +59,6 @@ public class LogFilter {
 
 
 
-    String lineeparator = System.getProperty("line.separator");
-
-
-
-    public LogFilter() {
-        this(TYPE.REQUEST);
-    }
-
-    public LogFilter(TYPE logType) {
-        this.logType = logType;
-        this.hostName = IpUtils.getHostName();
-        this.timeStamp = ZonedDateTime.now(ZoneOffset.of("+08:00")).toString();
-        this.serverIp = IpUtils.getLocalIp();
-    }
-
     /**
      * 日志级别枚举类
      */
@@ -88,7 +70,6 @@ public class LogFilter {
         DEBUG,
         TRACE,
         ALL;
-
         private LEVEL() {
         }
     }
@@ -99,7 +80,8 @@ public class LogFilter {
     public static enum TYPE {
         REQUEST,
         RESPONSE,
-        OUT;
+        OUT,
+        EXCEPTION;
         private TYPE() {
         }
     }

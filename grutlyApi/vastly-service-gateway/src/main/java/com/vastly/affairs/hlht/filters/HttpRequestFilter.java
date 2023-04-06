@@ -6,60 +6,42 @@ import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.communtion.HttpRequestCommuntion;
 import com.vastly.affairs.hlht.exception.vastlyExceptionMessage;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
-import com.vastly.affairs.hlht.logFilter.LogFilter;
+import com.vastly.ymh.core.affairs.entity.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
 import com.vastly.affairs.util.FormDataAnalysisUtil;
 import com.vastly.affairs.util.GeneratedKey;
 import com.vastly.affairs.util.IpUtils;
-import com.vastly.affairs.util.MultipartFileFile;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.entity.ContentType;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.Ordered;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.io.buffer.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.HttpMessageReader;
-import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.http.codec.multipart.Part;
-import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
-import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.*;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -136,12 +118,16 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
         headers.putAll(request.getHeaders());
         //记录日志
         final LogFilter logDTO = new LogFilter();
+        logDTO.setLogType(LogFilter.TYPE.REQUEST);
         logDTO.setLevel(LogFilter.LEVEL.INFO);
+        logDTO.setHostName(IpUtils.getHostName());
+        logDTO.setServerIp(IpUtils.getLocalIp());
         logDTO.setRequestIp(IpUtils.getClientIp(request));
+        logDTO.setTimeStamp(ZonedDateTime.now(ZoneOffset.of("+08:00")).toString());
         logDTO.setRequestDate(startTime);
         logDTO.setRouteId(route.getId());
 
-        logDTO.setRequestId(requestId.get());
+        logDTO.setId(requestId.get());
         // 原始请求体
         URI requri = request.getURI();
         // 请求路径
@@ -212,7 +198,7 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                                 }
                             }else{
                                 //todo 请求报文修改
-                                newReqBody = httpRequestCommuntion.ServerBodyBussTask(bytes, mediaType, logDTO.getRequestId(), "request");
+                                newReqBody = httpRequestCommuntion.ServerBodyBussTask(bytes, mediaType, logDTO.getId(), "request");
                                 headers.remove(HttpHeaders.CONTENT_LENGTH);
                                 logDTO.setRequestBody(LogHelper.reqBodyLog(newReqBody, mediaType));
                                 logDTO.setResponseBodySize(newReqBody.length);
@@ -331,7 +317,7 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                 logDTO.setResponseContentType(LogHelper.getMediaTypeContentType(mediaType));
                 logDTO.setResponseCharset(LogHelper.getMediaTypeCharset(mediaType).toString());
                 logDTO.setStatus(httpStatus.value());
-                log.info(logDTO.getRequestId()+" :响应信息处理》》》》》》》》》》》》》》》");
+                log.info(logDTO.getId()+" :响应信息处理》》》》》》》》》》》》》》》");
                 long responseDate = System.currentTimeMillis();
                 logDTO.setResponseDate(responseDate);
                 // 计算执行时间
@@ -349,7 +335,7 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                         DataBufferUtils.release(join);
 
                         // 响应报文特殊处理
-                        byte[] newRespBody = httpRequestCommuntion.ServerBodyBussTask(content, mediaType, logDTO.getRequestId(), "response");
+                        byte[] newRespBody = httpRequestCommuntion.ServerBodyBussTask(content, mediaType, logDTO.getId(), "response");
                         logDTO.setResponseBody(LogHelper.respBodyLog(newRespBody, mediaType,responseHeaders));
                         logDTO.setResponseBodySize(newRespBody.length);
 

@@ -1,17 +1,13 @@
 package com.vastly.affairs.hlht.logFilter;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.vastly.affairs.util.FileUtils;
+import com.vastly.affaris.hlht.mongoDB.service.VastlyGatewayLogService;
+import com.vastly.ymh.core.affairs.entity.LogFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.http.MediaType;
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Base64;
 
 /**
  * * 超大报文接口body 异步输出
@@ -22,6 +18,9 @@ import java.util.Base64;
 @Component
 public class BodyPrintAsyncTask {
 	private static final Log log = LogFactory.getLog(BodyPrintAsyncTask.class);
+
+	@Autowired
+	private VastlyGatewayLogService vastlyGatewayLogService;
 
 	/**
 	 * 异步报文输出打印
@@ -41,6 +40,7 @@ public class BodyPrintAsyncTask {
 		}else{
 			log.debug(type+logDTO.toString());
 		}
+		vastlyGatewayLogService.logSave(logDTO);
 	}
 
 	

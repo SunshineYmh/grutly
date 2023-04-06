@@ -11,6 +11,7 @@ import com.vastly.affairs.hlht.constant.ContentType;
 import com.vastly.affairs.hlht.constant.HeaderConstant;
 import com.vastly.affairs.util.FileUtils;
 import com.vastly.affairs.util.IpUtils;
+import com.vastly.ymh.core.affairs.entity.LogFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -32,6 +33,8 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
@@ -43,24 +46,22 @@ public class LogHelper {
 
 
 
+
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
     private final static Map<String , String> FILE_CONTENT_TYPE = ContentType.getAllFile();
 
-    //@Resource(name="vastlyCaffeine")
-    //private static LoadingCache vastlyCaffeine;
 
-    @Autowired
-    private static CacheManager cacheManager;
-
-
-
-
-    static{
-        if (cacheManager == null) {
-            cacheManager = (CacheManager) SpringContextUtil.getBean("cacheManager", CacheManager.class);
-        }
-    }
+//    public LogFilter() {
+//        this(LogFilter.TYPE.REQUEST);
+//    }
+//
+//    public LogFilter(LogFilter.TYPE logType) {
+//        this.logType = logType;
+//        this.hostName = IpUtils.getHostName();
+//        this.timeStamp = ZonedDateTime.now(ZoneOffset.of("+08:00")).toString();
+//        this.serverIp = IpUtils.getLocalIp();
+//    }
 
 
 
@@ -380,6 +381,7 @@ public class LogHelper {
     }
 
 
+
         /**
      * 响应日志设置
      * @return
@@ -391,12 +393,16 @@ public class LogHelper {
         headers.putAll(request.getHeaders());
         //记录日志
         final LogFilter logDTO = new LogFilter();
+        logDTO.setLogType(LogFilter.TYPE.EXCEPTION);
         logDTO.setLevel(LogFilter.LEVEL.ERROR);
+        logDTO.setHostName(IpUtils.getHostName());
+        logDTO.setServerIp(IpUtils.getLocalIp());
         logDTO.setRequestIp(IpUtils.getClientIp(request));
+        logDTO.setTimeStamp(ZonedDateTime.now(ZoneOffset.of("+08:00")).toString());
         logDTO.setRequestDate(getStartTime( headers));
         logDTO.setRouteId(route==null?"":route.getId());
 
-        logDTO.setRequestId(getREQUEST_ID( headers));
+        logDTO.setId(getREQUEST_ID( headers));
         // 原始请求体
         URI requri = request.getURI();
         logDTO.setRequestUri(requri.toString());
@@ -416,6 +422,12 @@ public class LogHelper {
         logDTO.setStatus(code);
         logDTO.setErrorMessage(errorMessage);
         logDTO.setExceptionMessage(exceptionMessage);
+
+        long responseDate = System.currentTimeMillis();
+        logDTO.setResponseDate(responseDate);
+        // 计算执行时间
+        long executeTime = (responseDate - logDTO.getRequestDate());
+        logDTO.setExecuteTime(executeTime);
         return logDTO;
     }
 

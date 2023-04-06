@@ -1,0 +1,3 @@
+com\vastly\ymh\mybatis\affairs\dao\GatewayRouteServiceDao.class
+com\vastly\ymh\mybatis\affairs\service\GatewayRouteService.class
+com\vastly\affaris\hlht\mongoDB\service\VastlyGatewayLogService.class
