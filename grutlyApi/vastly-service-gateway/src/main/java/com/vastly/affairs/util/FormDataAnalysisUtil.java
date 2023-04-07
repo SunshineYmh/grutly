@@ -8,9 +8,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -54,7 +52,19 @@ public class FormDataAnalysisUtil {
 
     }
 
-    public static JSONObject getMultipartFormData(byte[] fileData,String wrapperName){
+    public static String uploadObject(MinioUtils minioUtils,byte[] data,String fileName,String contentType){
+        InputStream in = new ByteArrayInputStream(data);
+        String filePath = DateUtils.getCurrentTime()+"/"+fileName;
+        Boolean b = minioUtils.uploadObject( in, filePath,  data.length, contentType);
+        if(b){
+            return filePath;
+        }else{
+            return null;
+        }
+    }
+
+    public static JSONObject getMultipartFormData(MinioUtils minioUtils,byte[] fileData,String wrapperName){
+        log.info("from-data的 boundary="+wrapperName);
         JSONObject jsonObj = new JSONObject();
         //Map<String,Object> jsonObj = new HashMap<>();
         List<List<byte[]>> datass =  getRawDataTask(fileData, wrapperName);
@@ -124,10 +134,10 @@ public class FormDataAnalysisUtil {
                         System.arraycopy(fileD,0,fileDatas,startIndex,fileD.length);
                         startIndex += (fileD.length);
                     }
-                    String base64encodedString = Base64.getEncoder().encodeToString(fileDatas);
-                    jsondata.put("fileData",fileDatas);
+                    String filePath = uploadObject( minioUtils, fileDatas,filename, ContentType);
+                    jsondata.put("filePath",filePath);
                 }else{
-                    jsondata.put("fileData",null);
+                    jsondata.put("filePath","");
                 }
                 fileArr.add(jsondata);
             }else{

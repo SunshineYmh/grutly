@@ -6,12 +6,9 @@ import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.communtion.HttpRequestCommuntion;
 import com.vastly.affairs.hlht.exception.vastlyExceptionMessage;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
-import com.vastly.affairs.util.DateUtils;
+import com.vastly.affairs.util.*;
 import com.vastly.ymh.core.affairs.entity.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
-import com.vastly.affairs.util.FormDataAnalysisUtil;
-import com.vastly.affairs.util.GeneratedKey;
-import com.vastly.affairs.util.IpUtils;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -83,6 +80,9 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
     @Autowired
     private BodyPrintAsyncTask bodyPrintAsyncTask;
 
+    @Autowired
+    private MinioUtils minioUtils;
+
     //   值越小，优先级越高
 //    int HIGHEST_PRECEDENCE = -2147483648;
 //    int LOWEST_PRECEDENCE = 2147483647;
@@ -104,6 +104,9 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
         }
         if (httpRequestCommuntion == null) {
             httpRequestCommuntion = (HttpRequestCommuntion) SpringContextUtil.getBean("httpRequestCommuntion", HttpRequestCommuntion.class);
+        }
+        if(minioUtils == null){
+            minioUtils = (MinioUtils) SpringContextUtil.getBean("minioUtils", MinioUtils.class);
         }
         //初始化请求信息
         Date date = new Date();
@@ -191,15 +194,15 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                                 newReqBody = bytes;
                                 String wrapperName =  LogHelper.getMediaTypeContentBoundaryType(mediaType);
                                 if(StringUtils.isNotEmpty(wrapperName)){
-                                    JSONObject jsondata = FormDataAnalysisUtil.getMultipartFormData(bytes, wrapperName);
-                                    logDTO.setRequestBody(LogHelper.reqBodyLog(jsondata.toString().getBytes(Charset.forName("UTF-8")), mediaType,headers));
+                                    JSONObject jsondata = FormDataAnalysisUtil.getMultipartFormData(minioUtils,bytes, wrapperName);
+                                    logDTO.setRequestBody(jsondata.toJSONString());
                                     logDTO.setResponseBodySize(newReqBody.length);
                                 }
                             }else{
                                 //todo 请求报文修改
                                 newReqBody = httpRequestCommuntion.ServerBodyBussTask(bytes, mediaType, logDTO.getId(), "request");
                                 headers.remove(HttpHeaders.CONTENT_LENGTH);
-                                logDTO.setRequestBody(LogHelper.reqBodyLog(newReqBody, mediaType,headers));
+                                logDTO.setRequestBody(LogHelper.reqBodyLog(minioUtils,newReqBody, mediaType,headers));
                                 logDTO.setResponseBodySize(newReqBody.length);
                             }
                             // 重写原始请求
@@ -335,7 +338,7 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
 
                         // 响应报文特殊处理
                         byte[] newRespBody = httpRequestCommuntion.ServerBodyBussTask(content, mediaType, logDTO.getId(), "response");
-                        logDTO.setResponseBody(LogHelper.respBodyLog(newRespBody, mediaType,responseHeaders));
+                        logDTO.setResponseBody(LogHelper.respBodyLog(minioUtils,newRespBody, mediaType,responseHeaders));
                         logDTO.setResponseBodySize(newRespBody.length);
 
                         return bufferFactory.wrap(newRespBody);

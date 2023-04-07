@@ -102,6 +102,17 @@
         </dependency>
 
         <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.10.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.vastly.ymh</groupId>
             <artifactId>vastly-service</artifactId>
             <version>0.0.1-SNAPSHOT</version>

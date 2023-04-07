@@ -131,6 +131,12 @@ management:
       exposure:
         include: '*'
 
+minio:
+  endpoint:  http://101.43.7.108:9000/
+  accessKey: 642fc2b54f0653181465d921
+  secretKey: 642eb0404f065321a858e210
+  bucketName: vastly-gateway-console
+
 
 mybatis:
   configuration:

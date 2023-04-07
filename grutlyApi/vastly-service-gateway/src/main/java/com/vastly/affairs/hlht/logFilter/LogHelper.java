@@ -9,9 +9,7 @@ import com.vastly.affairs.hlht.communtion.SpringContextUtil;
 import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.constant.ContentType;
 import com.vastly.affairs.hlht.constant.HeaderConstant;
-import com.vastly.affairs.util.DateUtils;
-import com.vastly.affairs.util.FileUtils;
-import com.vastly.affairs.util.IpUtils;
+import com.vastly.affairs.util.*;
 import com.vastly.ymh.core.affairs.entity.LogFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -28,7 +26,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -182,57 +182,13 @@ public class LogHelper {
         return Mono.empty();
     }
 
-    public static String reqBodyLog(byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
+    public static String reqBodyLog(MinioUtils minioUtils, byte[] RequestBody, MediaType mediaType, HttpHeaders headers){
         String requestBody = "";
         Charset charset =   getMediaTypeCharset(mediaType);
         //处理请求的文件数据文件上传
         if (MediaType.MULTIPART_FORM_DATA.isCompatibleWith(mediaType)) {
-            if(RequestBody !=null && RequestBody.length>0){
-                JSONObject RequestBodyJSON = JSONObject.parseObject(new String(RequestBody, charset));
-                JSONArray fileList = RequestBodyJSON.getJSONArray("file");
-                JSONArray fileListNew  = new JSONArray();
-                if(fileList.size()>0){
-                    for(int i=0;i<fileList.size();i++){
-                        JSONObject file = fileList.getJSONObject(i);
-                        String filename = file.getString("filename");
-                        try {
-                            filename = URLDecoder.decode(filename,charset.toString());
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                        }
-                        // 获取文件后缀名
-                        String fileType = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-                        if(StringUtils.isEmpty(fileType)){
-                            fileType = ".txt";
-                            if(StringUtils.isNotEmpty(mediaType.toString())){
-                                for(Map.Entry<String, String> vo : FILE_CONTENT_TYPE.entrySet()){
-                                    String v = vo.getValue();
-                                    if(mediaType.toString().contains(v)){
-                                        fileType = vo.getKey();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        byte[] fileDatas = Base64.getDecoder().decode(file.getString("fileData"));
-                        String filePath = "C:\\Users\\ymh\\Desktop\\test\\"+filename;
-                        try {
-                            FileUtils.writeByteArrayToFile(filePath,fileDatas);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        file.put("filename",filename);
-                        file.put("fileSize",fileDatas.length);
-                        file.put("type",fileType);
-                        file.put("filePath",filePath);
-                        file.remove("fileData");
-                        file.put("charset",charset);
-                        fileListNew.add(file);
-                    }
-                    RequestBodyJSON.put("file",fileListNew);
-                }
-                requestBody = RequestBodyJSON.toJSONString();
-            }
+            String wrapperName =  LogHelper.getMediaTypeContentBoundaryType(mediaType);
+           return FormDataAnalysisUtil.getMultipartFormData(minioUtils,RequestBody, wrapperName).toString();
         }else if(MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(mediaType)){
             String parms = new String(RequestBody, charset);
             String[] parmss = parms.split("&",-1);
@@ -246,7 +202,7 @@ public class LogHelper {
             }
             requestBody = jsonpar.toJSONString();
         }else if(isUploadFile(mediaType)){
-            return getFileData(RequestBody,mediaType,headers);
+            return getFileData(minioUtils,RequestBody,mediaType,headers);
         }else{
             requestBody = new String(RequestBody, charset);
         }
@@ -254,17 +210,28 @@ public class LogHelper {
     }
 
 
-    public static String respBodyLog(byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
+    public static String respBodyLog(MinioUtils minioUtils,byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
         //处理响应，判断是否是文件
         if(isUploadFile(mediaType)){
-            return getFileData(RequestBody,mediaType,headers);
+            return getFileData(minioUtils,RequestBody,mediaType,headers);
         }else{
             return new String(RequestBody, Charset.forName("UTF-8"));
         }
     }
 
+    public static String uploadObject(MinioUtils minioUtils,byte[] data,String fileName,String contentType){
+        InputStream in = new ByteArrayInputStream(data);
+        String filePath = DateUtils.getCurrentTime()+"/"+fileName;
+        Boolean b = minioUtils.uploadObject( in, filePath,  data.length, contentType);
+        if(b){
+            return filePath;
+        }else{
+            return null;
+        }
+    }
 
-    public static String getFileData(byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
+
+    public static String getFileData(MinioUtils minioUtils,byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
         Charset charset =   getMediaTypeCharset(mediaType);
         //获取文件名
         String filename = "";
@@ -308,14 +275,17 @@ public class LogHelper {
         file.put("type",fileType);
         file.put("ContentType",mediaTypeStr);
         file.put("charset",charset);
-        String filePath = "C:\\Users\\ymh\\Desktop\\test\\"+filename;
-        try {
-            FileUtils.writeByteArrayToFile(filePath,RequestBody);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String filePath = uploadObject( minioUtils,RequestBody,filename,mediaTypeStr);
+        file.put("filePath",filePath);
         return file.toString();
     }
+
+    //        String filePath = "C:\\Users\\ymh\\Desktop\\test\\"+filename;
+//        try {
+//            FileUtils.writeByteArrayToFile(filePath,RequestBody);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
 
     /**
      * 判断是否是上传文件
