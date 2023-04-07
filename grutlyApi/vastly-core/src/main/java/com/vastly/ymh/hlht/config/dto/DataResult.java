@@ -79,6 +79,9 @@ public class DataResult<T> {
     public static <T> DataResult<T> error(T data){
         return new DataResult<T>(false,500,data,"失败");
     }
+    public static <T> DataResult<T> error(String msg){
+        return new DataResult<T>(false,500,null,msg);
+    }
     public static <T> DataResult<T> error(T data,String msg){
         return new DataResult<T>(false,500,data,msg);
     }

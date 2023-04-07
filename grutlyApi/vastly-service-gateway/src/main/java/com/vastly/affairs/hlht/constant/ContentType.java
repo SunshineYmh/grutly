@@ -33,7 +33,7 @@ public class ContentType {
     }
 
     static {
-        CONTENT_TYPE.put(".load" , "text/html");
+        CONTENT_TYPE.put(".html" , "text/html");
         CONTENT_TYPE.put(".123" , "application/vnd.lotus-1-2-3");
         CONTENT_TYPE.put(".3ds" , "image/x-3ds");
         CONTENT_TYPE.put(".3g2" , "video/3gpp");
@@ -227,8 +227,6 @@ public class ContentType {
         CONTENT_TYPE.put(".hpgl" , "application/vnd.hp-hpgl");
         CONTENT_TYPE.put(".hpp" , "text/x-c++hdr");
         CONTENT_TYPE.put(".hs" , "text/x-haskell");
-        CONTENT_TYPE.put(".htm" , "text/html");
-        CONTENT_TYPE.put(".html" , "text/html");
         CONTENT_TYPE.put(".hwp" , "application/x-hwp");
         CONTENT_TYPE.put(".hwt" , "application/x-hwt");
         CONTENT_TYPE.put(".hxx" , "text/x-c++hdr");
@@ -256,8 +254,6 @@ public class ContentType {
         CONTENT_TYPE.put(".jnlp" , "application/x-java-jnlp-file");
         CONTENT_TYPE.put(".jp2" , "image/jp2");
         CONTENT_TYPE.put(".jpc" , "image/jp2");
-        CONTENT_TYPE.put(".jpe" , "image/jpeg");
-        CONTENT_TYPE.put(".jpeg" , "image/jpeg");
         CONTENT_TYPE.put(".jpf" , "image/jp2");
         CONTENT_TYPE.put(".jpg" , "image/jpeg");
         CONTENT_TYPE.put(".jpr" , "application/x-jbuilder-project");
@@ -724,7 +720,7 @@ public class ContentType {
 
 
         // 各种文件类型（包括multipart/form-data）
-        FILE_CONTENT_TYPE.put(".load" , "text/html");
+        FILE_CONTENT_TYPE.put(".html" , "text/html");
         FILE_CONTENT_TYPE.put(".123" , "application/vnd.lotus-1-2-3");
         FILE_CONTENT_TYPE.put(".3ds" , "image/x-3ds");
         FILE_CONTENT_TYPE.put(".3g2" , "video/3gpp");
@@ -918,8 +914,6 @@ public class ContentType {
         FILE_CONTENT_TYPE.put(".hpgl" , "application/vnd.hp-hpgl");
         FILE_CONTENT_TYPE.put(".hpp" , "text/x-c++hdr");
         FILE_CONTENT_TYPE.put(".hs" , "text/x-haskell");
-        FILE_CONTENT_TYPE.put(".htm" , "text/html");
-        FILE_CONTENT_TYPE.put(".html" , "text/html");
         FILE_CONTENT_TYPE.put(".hwp" , "application/x-hwp");
         FILE_CONTENT_TYPE.put(".hwt" , "application/x-hwt");
         FILE_CONTENT_TYPE.put(".hxx" , "text/x-c++hdr");
@@ -947,8 +941,6 @@ public class ContentType {
         FILE_CONTENT_TYPE.put(".jnlp" , "application/x-java-jnlp-file");
         FILE_CONTENT_TYPE.put(".jp2" , "image/jp2");
         FILE_CONTENT_TYPE.put(".jpc" , "image/jp2");
-        FILE_CONTENT_TYPE.put(".jpe" , "image/jpeg");
-        FILE_CONTENT_TYPE.put(".jpeg" , "image/jpeg");
         FILE_CONTENT_TYPE.put(".jpf" , "image/jp2");
         FILE_CONTENT_TYPE.put(".jpg" , "image/jpeg");
         FILE_CONTENT_TYPE.put(".jpr" , "application/x-jbuilder-project");

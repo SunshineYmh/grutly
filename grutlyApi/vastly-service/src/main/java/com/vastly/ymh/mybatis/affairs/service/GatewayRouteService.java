@@ -37,47 +37,32 @@ public class GatewayRouteService {
      * HfbTqwtdbBean
      */
     public DataResult loadRouteConfig() {
-        DataResult result = new DataResult();
         try {
             List<GatewayRoute> beanList = gatewayRouteServiceDao.loadRouteConfig();
             if(beanList.size()>0) {
-                result.setSuccess(true);
-                result.setData(beanList);
-                result.setTotalcount(beanList.size());
+               return DataResult.success(beanList,beanList.size());
             }else {
-                result.setSuccess(false);
-                result.setMsg("查询无数据");
+                return DataResult.error(404,"查询无数据！");
             }
         } catch (Exception e) {
             String trace = "路由信息查询失败:" + e.getMessage();
-            log.error(trace);
-            result.setSuccess(false);
-            result.setMsg("查询失败！");
+            return DataResult.error(trace);
         }
-        return result;
     }
 
 
-    public DataResult loadRouteQuery(GatewayRoute bean) {
-        DataResult result = new DataResult();
+    public DataResult routeQuery(GatewayRoute bean) {
         try {
-            List<GatewayRoute> beanList = gatewayRouteServiceDao.loadRouteQuery(bean);
+            List<GatewayRoute> beanList = gatewayRouteServiceDao.routeQuery(bean);
             if(beanList.size()>0) {
-                result.setSuccess(true);
-                result.setData(beanList);
-                result.setTotalcount(beanList.size());
+                return DataResult.success(beanList,beanList.size());
             }else {
-                result.setSuccess(true);
-                result.setMsg("查询无数据");
-                result.setData(new JSONArray());
+                return DataResult.error(404,"查询无数据！");
             }
         } catch (Exception e) {
             String trace = "路由信息查询失败:" + e.getMessage();
-            log.error(trace);
-            result.setSuccess(false);
-            result.setMsg("查询失败！");
+            return DataResult.error(trace);
         }
-        return result;
     }
 
 
@@ -86,23 +71,17 @@ public class GatewayRouteService {
      * HfbTqwtdbBean
      */
     public DataResult addRouteConfig(GatewayRoute bean) {
-        bean.setId(UtilTools.getUuid());
-        DataResult result = new DataResult();
         try {
             int ret = gatewayRouteServiceDao.addRouteConfig(bean);
             if(ret == 1) {
-                result.setSuccess(true);
+                return DataResult.success();
             }else {
-                result.setSuccess(false);
-                result.setMsg("路由信息新增失败！");
+                return DataResult.error("路由信息新增失败！");
             }
         } catch (Exception e) {
             String trace = "路由信息新增失败:" + e.getMessage();
-            log.error(trace);
-            result.setSuccess(false);
-            result.setMsg("路由信息新增失败！");
+            return DataResult.error(trace);
         }
-        return result;
     }
 
 
@@ -111,21 +90,17 @@ public class GatewayRouteService {
      * HfbTqwtdbBean
      */
     public DataResult updateRouteConfig(GatewayRoute bean) {
-        DataResult result = new DataResult();
         try {
             int ret = gatewayRouteServiceDao.updateRouteConfig(bean);
-            if(ret == 1) {
-                result.setSuccess(true);
+            if(ret >= 1) {
+                return DataResult.success();
             }else {
-                result.setSuccess(false);
+                return DataResult.error("路由信息修改失败！");
             }
         } catch (Exception e) {
-            String trace = "路由信息新增失败:" + e.getMessage();
-            log.error(trace);
-            result.setSuccess(false);
-            result.setMsg("查询失败！");
+            String trace = "路由信息修改失败:" + e.getMessage();
+            return DataResult.error(trace);
         }
-        return result;
     }
 
 
@@ -134,38 +109,30 @@ public class GatewayRouteService {
      * HfbTqwtdbBean
      */
     public DataResult deletePulsRoute(List<GatewayRoute> bean) {
-        DataResult result = new DataResult();
         try {
             int ret = gatewayRouteServiceDao.deletePulsRoute(bean);
             if(ret >= 1) {
-                result.setSuccess(true);
+                return DataResult.success();
             }else {
-                result.setSuccess(false);
+                return DataResult.error("路由信息删除失败！");
             }
         } catch (Exception e) {
-            String trace = "路由信息新增失败:" + e.getMessage();
-            log.error(trace);
-            result.setSuccess(false);
-            result.setMsg("查询失败！");
+            String trace = "路由信息删除失败:" + e.getMessage();
+            return DataResult.error(trace);
         }
-        return result;
     }
 
     public DataResult deleteRouteConfig(GatewayRoute bean) {
-        DataResult result = new DataResult();
         try {
             int ret = gatewayRouteServiceDao.deleteRouteConfig(bean);
-            if(ret == 1) {
-                result.setSuccess(true);
+            if(ret >= 1) {
+                return DataResult.success();
             }else {
-                result.setSuccess(false);
+                return DataResult.error("路由信息删除失败！");
             }
         } catch (Exception e) {
-            String trace = "路由信息新增失败:" + e.getMessage();
-            log.error(trace);
-            result.setSuccess(false);
-            result.setMsg("查询失败！");
+            String trace = "路由信息删除失败:" + e.getMessage();
+            return DataResult.error(trace);
         }
-        return result;
     }
 }

@@ -23,7 +23,7 @@ public class GatewayRoute implements Serializable {
     /**
      * 服务ID
      */
-    private String id;
+    private String routeId;
 
     /**
      * 租户
@@ -81,7 +81,6 @@ public class GatewayRoute implements Serializable {
      */
     private String path;
 
-    private String filters;//
 
     /**
      * 过滤器StripPrefix，作用是去掉请求路径的最前面n个部分截取掉。StripPrefix=1就代表截取路径的个数为1，
@@ -89,6 +88,10 @@ public class GatewayRoute implements Serializable {
      */
     private int stripPrefix;
 
+
+    /**
+     * 限流key
+     */
     private String resolverKey;
 
     /**
@@ -115,30 +118,22 @@ public class GatewayRoute implements Serializable {
     public void setTimeout(int timeout) {
         this.timeout = timeout == 0 ? 30 : timeout;
     }
-    /**
-     * 顺序
-     */
-    private int  order;
 
+    /**
+     * 重试次数；0-不重试；大于0 启用重试
+     */
     private int retry;
     /**
      * 备注
      */
     private String remarks;
     /**
-     * 服务资源状态，0-正常；1-非正常
+     * 路由状态：0-未发布；1-正常（已发布）；2-注销；3-退回（禁止，发布审批失败）；9-其他（异常）
      */
     private int isValid;
 
+    // 是否公开接口，公开的接口可以所有人直接访问，不需要权限 0-是；1-否',
+    private int isPublic;
 
-    private String swaggerJson;
-
-
-    private String swaggerUri;
-
-    /**
-     * 接口生成方式，0-SwaggerUri；1-SwaggerJson; 2-手动
-     */
-    private int openApiType;
 
 }

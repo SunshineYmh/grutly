@@ -1,6 +1,7 @@
 package com.vastly.affairs.hlht.handler;
 
 import com.vastly.affairs.hlht.redis.RedisConfig;
+import com.vastly.affairs.util.SnowflakeIdWorker;
 import com.vastly.ymh.core.affairs.entity.GatewayRoute;
 import com.vastly.ymh.hlht.config.dto.DataResult;
 import com.vastly.ymh.mybatis.affairs.service.GatewayRouteService;
@@ -49,6 +50,9 @@ public class GatewayServiceHandler implements ApplicationEventPublisherAware,Com
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
+    @Autowired
+    private SnowflakeIdWorker snowflakeIdWorker;
+
 
     @Override
     public void run(String... args){
@@ -89,27 +93,67 @@ public class GatewayServiceHandler implements ApplicationEventPublisherAware,Com
         return results;
     }
 
-    public void saveRoute(GatewayRoute gatewayRoute){
-        RouteDefinition definition=handleData(gatewayRoute);
-        routeDefinitionWriter.save(Mono.just(definition)).subscribe();
-        this.publisher.publishEvent(new RefreshRoutesEvent(this));
+    public DataResult routeQuery(GatewayRoute gatewayRoute){
+       return GatewayRouteService.routeQuery(gatewayRoute);
     }
 
-    public void update(GatewayRoute gatewayRoute) {
-        RouteDefinition definition=handleData(gatewayRoute);
-        try {
-            this.routeDefinitionWriter.delete(Mono.just(definition.getId()));
-            routeDefinitionWriter.save(Mono.just(definition)).subscribe();
-            this.publisher.publishEvent(new RefreshRoutesEvent(this));
-        } catch (Exception e) {
-            e.printStackTrace();
+    public DataResult saveRoute(GatewayRoute gatewayRoute){
+        String routeId = String.valueOf(snowflakeIdWorker.nextId());
+        gatewayRoute.setRouteId(routeId);
+        DataResult result =  GatewayRouteService.addRouteConfig(gatewayRoute);
+        if(result.isSuccess()){
+            try {
+                RouteDefinition definition=handleData(gatewayRoute);
+                routeDefinitionWriter.save(Mono.just(definition)).subscribe();
+                this.publisher.publishEvent(new RefreshRoutesEvent(this));
+                return result;
+            }catch (Exception e){
+                GatewayRouteService.deleteRouteConfig(gatewayRoute);
+                e.printStackTrace();
+                return DataResult.error("路由新增失败！"+e.getMessage());
+            }
+        }else{
+            return result;
+        }
+    }
+
+    public DataResult updateRoute(GatewayRoute gatewayRoute) {
+        DataResult result =  GatewayRouteService.updateRouteConfig(gatewayRoute);
+        if(result.isSuccess()){
+            try {
+                RouteDefinition definition=handleData(gatewayRoute);
+                this.routeDefinitionWriter.delete(Mono.just(definition.getId()));
+                routeDefinitionWriter.save(Mono.just(definition)).subscribe();
+                this.publisher.publishEvent(new RefreshRoutesEvent(this));
+                return result;
+            } catch (Exception e) {
+                e.printStackTrace();
+                e.printStackTrace();
+                return DataResult.error("路由修改失败！"+e.getMessage());
+            }
+        }else{
+            return result;
         }
     }
 
 
-    public void deleteRoute(String routeId){
-        routeDefinitionWriter.delete(Mono.just(routeId)).subscribe();
-        this.publisher.publishEvent(new RefreshRoutesEvent(this));
+    public DataResult deleteRoute(String routeId){
+        GatewayRoute gatewayRoute = new GatewayRoute();
+        gatewayRoute.setRouteId(routeId);
+        DataResult result =  GatewayRouteService.deleteRouteConfig(gatewayRoute);
+        if(result.isSuccess()){
+            try {
+                routeDefinitionWriter.delete(Mono.just(routeId)).subscribe();
+                this.publisher.publishEvent(new RefreshRoutesEvent(this));
+                return result;
+            } catch (Exception e) {
+                e.printStackTrace();
+                e.printStackTrace();
+                return DataResult.error("路由删除失败！"+e.getMessage());
+            }
+        }else{
+            return result;
+        }
     }
 
     /**
@@ -119,6 +163,8 @@ public class GatewayServiceHandler implements ApplicationEventPublisherAware,Com
      */
     private RouteDefinition handleData(GatewayRoute gatewayRoute){
         RouteDefinition definition = new RouteDefinition();
+        definition.setId(gatewayRoute.getRouteId());
+
         Map<String, String> predicateParams = new HashMap<>(8);
         List<PredicateDefinition> predicateDefinitionList = new ArrayList<>();
 
@@ -129,7 +175,7 @@ public class GatewayServiceHandler implements ApplicationEventPublisherAware,Com
         String  protocol = gatewayRoute.getProtocol().toLowerCase();
         String uriipport = gatewayRoute.getProtocol()+"://"+gatewayRoute.getHost();
         String path = gatewayRoute.getPath();
-        log.info(gatewayRoute.getId()+"GatewayRoute 路由网关地址："+uriipport+path);
+        log.info(gatewayRoute.getUid()+"GatewayRoute 路由网关地址："+uriipport+path);
         if(protocol.startsWith("http")){
             //http地址
             uri = UriComponentsBuilder.fromHttpUrl(uriipport).build().toUri();
@@ -138,7 +184,6 @@ public class GatewayServiceHandler implements ApplicationEventPublisherAware,Com
             uri = UriComponentsBuilder.fromUriString("lb://"+uriipport).build().toUri();
         }
 
-        definition.setId(gatewayRoute.getId());
         // 名称是固定的，spring gateway会根据名称找对应的PredicateFactory
         PredicateDefinition predicate = new PredicateDefinition();
         predicate.setName("Path");

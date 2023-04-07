@@ -29,8 +29,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -179,18 +182,38 @@ public class LogHelper {
         return Mono.empty();
     }
 
-    public static String reqBodyLog(byte[] RequestBody,MediaType mediaType){
+    public static String reqBodyLog(byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
         String requestBody = "";
+        Charset charset =   getMediaTypeCharset(mediaType);
         //处理请求的文件数据文件上传
         if (MediaType.MULTIPART_FORM_DATA.isCompatibleWith(mediaType)) {
             if(RequestBody !=null && RequestBody.length>0){
-                JSONObject RequestBodyJSON = JSONObject.parseObject(new String(RequestBody, Charset.forName("UTF-8")));
+                JSONObject RequestBodyJSON = JSONObject.parseObject(new String(RequestBody, charset));
                 JSONArray fileList = RequestBodyJSON.getJSONArray("file");
                 JSONArray fileListNew  = new JSONArray();
                 if(fileList.size()>0){
                     for(int i=0;i<fileList.size();i++){
                         JSONObject file = fileList.getJSONObject(i);
                         String filename = file.getString("filename");
+                        try {
+                            filename = URLDecoder.decode(filename,charset.toString());
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                        // 获取文件后缀名
+                        String fileType = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+                        if(StringUtils.isEmpty(fileType)){
+                            fileType = ".txt";
+                            if(StringUtils.isNotEmpty(mediaType.toString())){
+                                for(Map.Entry<String, String> vo : FILE_CONTENT_TYPE.entrySet()){
+                                    String v = vo.getValue();
+                                    if(mediaType.toString().contains(v)){
+                                        fileType = vo.getKey();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                         byte[] fileDatas = Base64.getDecoder().decode(file.getString("fileData"));
                         String filePath = "C:\\Users\\ymh\\Desktop\\test\\"+filename;
                         try {
@@ -198,16 +221,34 @@ public class LogHelper {
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
+                        file.put("filename",filename);
+                        file.put("fileSize",fileDatas.length);
+                        file.put("type",fileType);
                         file.put("filePath",filePath);
                         file.remove("fileData");
+                        file.put("charset",charset);
                         fileListNew.add(file);
                     }
                     RequestBodyJSON.put("file",fileListNew);
                 }
                 requestBody = RequestBodyJSON.toJSONString();
             }
+        }else if(MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(mediaType)){
+            String parms = new String(RequestBody, charset);
+            String[] parmss = parms.split("&",-1);
+            JSONObject jsonpar = new JSONObject();
+            for(String par : parmss){
+                String[] pars = par.split("=",-1);
+                try {
+                    jsonpar.put(URLDecoder.decode(pars[0],charset.toString()),URLDecoder.decode(pars[1],charset.toString()));
+                }catch (Exception e){
+                }
+            }
+            requestBody = jsonpar.toJSONString();
+        }else if(isUploadFile(mediaType)){
+            return getFileData(RequestBody,mediaType,headers);
         }else{
-            requestBody = new String(RequestBody, Charset.forName("UTF-8"));
+            requestBody = new String(RequestBody, charset);
         }
         return requestBody;
     }
@@ -216,47 +257,64 @@ public class LogHelper {
     public static String respBodyLog(byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
         //处理响应，判断是否是文件
         if(isUploadFile(mediaType)){
-            //获取文件名
-            String filename = "";
-            String  ContentDisposition =  headers.getFirst("Content-Disposition");
-            if(ContentDisposition != null && ContentDisposition.contains("filename=")){
-                String[] files = ContentDisposition.split(";");
-                for(String file : files){
-                    if(file.contains("filename=")){
-                        filename = file.replace("filename=","").trim();
-                    }
-                }
-            }
-            String mediaTypeStr = mediaType.toString();
-            String fileType = ".txt";
-            if(StringUtils.isNotEmpty(mediaTypeStr)){
-                for(Map.Entry<String, String> vo : FILE_CONTENT_TYPE.entrySet()){
-                    String v = vo.getValue();
-                    if(mediaTypeStr.contains(v)){
-                        fileType = vo.getKey();
-                        break;
-                    }
-                }
-            }
-            if(StringUtils.isEmpty(filename)){
-                filename = UUID.randomUUID().toString().replace("-", "")+fileType;
-            }
-            JSONObject file = new JSONObject();
-            file.put("filename",filename);
-            file.put("fileSize",RequestBody.length);
-            file.put("type",fileType);
-            file.put("ContentType",mediaTypeStr);
-
-            String filePath = "C:\\Users\\ymh\\Desktop\\test\\"+filename;
-            try {
-                FileUtils.writeByteArrayToFile(filePath,RequestBody);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return file.toString();
+            return getFileData(RequestBody,mediaType,headers);
         }else{
             return new String(RequestBody, Charset.forName("UTF-8"));
         }
+    }
+
+
+    public static String getFileData(byte[] RequestBody,MediaType mediaType,HttpHeaders headers){
+        Charset charset =   getMediaTypeCharset(mediaType);
+        //获取文件名
+        String filename = "";
+        String  ContentDisposition =  headers.getFirst("Content-Disposition");
+        if(ContentDisposition != null && ContentDisposition.contains("filename=")){
+            String[] files = ContentDisposition.split(";");
+            for(String file : files){
+                if(file.contains("filename=")){
+                    filename = file.replace("filename=","").trim();
+                }
+            }
+        }
+        String mediaTypeStr = mediaType.toString();
+        String fileType = ".txt";
+        if(StringUtils.isNotEmpty(mediaTypeStr)){
+            for(Map.Entry<String, String> vo : FILE_CONTENT_TYPE.entrySet()){
+                String v = vo.getValue();
+                if(mediaTypeStr.contains(v)){
+                    fileType = vo.getKey();
+                    break;
+                }
+            }
+        }
+        if(StringUtils.isEmpty(filename)){
+            filename = UUID.randomUUID().toString().replace("-", "")+fileType;
+        }else{
+            try {
+                filename = URLDecoder.decode(filename,charset.toString());
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            // 获取文件后缀名
+            String ext = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+            if(StringUtils.isNotEmpty(ext)){
+                fileType = ext;
+            }
+        }
+        JSONObject file = new JSONObject();
+        file.put("filename",filename);
+        file.put("fileSize",RequestBody.length);
+        file.put("type",fileType);
+        file.put("ContentType",mediaTypeStr);
+        file.put("charset",charset);
+        String filePath = "C:\\Users\\ymh\\Desktop\\test\\"+filename;
+        try {
+            FileUtils.writeByteArrayToFile(filePath,RequestBody);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return file.toString();
     }
 
     /**

@@ -192,14 +192,14 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                                 String wrapperName =  LogHelper.getMediaTypeContentBoundaryType(mediaType);
                                 if(StringUtils.isNotEmpty(wrapperName)){
                                     JSONObject jsondata = FormDataAnalysisUtil.getMultipartFormData(bytes, wrapperName);
-                                    logDTO.setRequestBody(LogHelper.reqBodyLog(jsondata.toString().getBytes(Charset.forName("UTF-8")), mediaType));
+                                    logDTO.setRequestBody(LogHelper.reqBodyLog(jsondata.toString().getBytes(Charset.forName("UTF-8")), mediaType,headers));
                                     logDTO.setResponseBodySize(newReqBody.length);
                                 }
                             }else{
                                 //todo 请求报文修改
                                 newReqBody = httpRequestCommuntion.ServerBodyBussTask(bytes, mediaType, logDTO.getId(), "request");
                                 headers.remove(HttpHeaders.CONTENT_LENGTH);
-                                logDTO.setRequestBody(LogHelper.reqBodyLog(newReqBody, mediaType));
+                                logDTO.setRequestBody(LogHelper.reqBodyLog(newReqBody, mediaType,headers));
                                 logDTO.setResponseBodySize(newReqBody.length);
                             }
                             // 重写原始请求

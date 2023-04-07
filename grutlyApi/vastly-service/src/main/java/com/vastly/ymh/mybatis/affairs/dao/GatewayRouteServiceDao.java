@@ -18,14 +18,14 @@ public interface GatewayRouteServiceDao {
 	 * *路由信息列表
 	 * @return
 	 */
-	@Select("select * from `vastly_gateway_route`  order by `createDate` desc")
+	@Select("select * from `vastly_gateway_route` where `isValid` = 1  order by `createDate` desc")
 	public List<GatewayRoute> loadRouteConfig();
 
 
 	@Select("<script>" +
 		      " select * from `vastly_gateway_route`  where 1 = 1 " +
-			"        <if test=\"id != null and id != '' \" > " +
-			"            and `id` = #{id} " +
+			"        <if test=\"routeId != null and routeId != '' \" > " +
+			"            and `routeId` = #{routeId} " +
 			"        </if> " +
 			"        <if test=\"uid != null and uid != '' \" > " +
 			"            and `uid` = #{uid} " +
@@ -41,7 +41,7 @@ public interface GatewayRouteServiceDao {
 			"        </if> " +
 			"        order by `createDate` desc "
 			+ " </script>")
-	public List<GatewayRoute> loadRouteQuery(GatewayRoute bean);
+	public List<GatewayRoute> routeQuery(GatewayRoute bean);
 
 
 
@@ -50,8 +50,12 @@ public interface GatewayRouteServiceDao {
 	 * @param bean
 	 * @return
 	 */
-	@Insert("INSERT INTO  `vastly_gateway_route`(`id`,`uid`, `routeName`, `protocol`, `host`, `path`, `stripPrefix`, `burstCapacity`, `replenishRate`, `requestedTokens`, `timeout`, `order`,  `isValid`,`openApiType`,`remarks`, `swaggerJson`,`swaggerUri`) " +
-			"      VALUES (#{id},#{uid}, #{routeName}, #{protocol}, #{host}, #{path}, #{stripPrefix}, #{burstCapacity}, #{replenishRate}, #{requestedTokens}, #{timeout}, #{order}, #{isValid},#{openApiType}, #{remarks}, #{swaggerJson},#{swaggerUri})")
+	@Insert(" INSERT INTO vastly_gateway_route " +
+			" (routeId, uid,  routeName, protocol, `host`, `path`, version, timeout, stripPrefix," +
+			" burstCapacity, replenishRate, requestedTokens, resolverKey, retry, isValid, isPublic, remarks) " +
+			" VALUES(#{routeId}, #{uid},  #{routeName}, #{protocol}, #{host}, #{path}, #{version}, " +
+			" #{timeout}, #{stripPrefix}, #{burstCapacity}, #{replenishRate}, #{requestedTokens}, #{resolverKey}, " +
+			" #{retry}, 0, #{isPublic}, #{remarks}) ")
 	public int addRouteConfig(GatewayRoute bean);
 
 
@@ -92,17 +96,16 @@ public interface GatewayRouteServiceDao {
 			"        <if test=\"isValid != null and isValid != '' \" > " +
 			"            `isValid` = #{isValid} , " +
 			"        </if> " +
-			"        <if test=\"openApiType != null and openApiType != '' \" > " +
-			"            `openApiType` = #{openApiType} , " +
+			"        <if test=\"resolverKey != null and resolverKey != '' \" > " +
+			"            `resolverKey` = #{resolverKey} , " +
 			"        </if> " +
-			"        <if test=\"swaggerJson != null and swaggerJson != '' \" > " +
-			"            `swaggerJson` = #{swaggerJson} , " +
+			"        <if test=\"retry != null and retry != '' \" > " +
+			"            `retry` = #{retry} , " +
 			"        </if> " +
-			"        <if test=\"swaggerUri != null and swaggerUri != '' \" > " +
-			"            `swaggerUri` = #{swaggerUri} , " +
+			"        <if test=\"isPublic != null and isPublic != '' \" > " +
+			"            `isPublic` = #{isPublic} , " +
 			"        </if> " +
-			"        `id` = #{id} " +
-			"        WHERE   `id` = #{id}" +
+			"        WHERE   `routeId` = #{routeId}" +
 			"</script>")
 	public int updateRouteConfig(GatewayRoute bean);
 
@@ -112,13 +115,13 @@ public interface GatewayRouteServiceDao {
 	 * @param bean
 	 * @return
 	 */
-	@Delete("delete from `vastly_gateway_route` where `id` = #{id}")
+	@Delete("delete from `vastly_gateway_route` where `routeId` = #{routeId}")
 	public int deleteRouteConfig(GatewayRoute bean);
 
 	@Delete("<script>" +
-			"		delete from `vastly_gateway_route` where `id` in " +
+			"		delete from `vastly_gateway_route` where `routeId` in " +
 			"        <foreach collection=\"list\" item=\"iten\" open=\"(\" separator=\",\" close=\")\"> " +
-			"            #{iten.id,jdbcType=BIGINT} " +
+			"            #{iten.routeId,jdbcType=VARCHAR} " +
 			"        </foreach>" +
 			"</script>")
 	public int deletePulsRoute(List<GatewayRoute> bean);
