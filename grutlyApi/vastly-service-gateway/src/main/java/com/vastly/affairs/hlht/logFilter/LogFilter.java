@@ -1,4 +1,4 @@
-package com.vastly.ymh.core.affairs.entity;
+package com.vastly.affairs.hlht.logFilter;
 
 
 import lombok.AllArgsConstructor;
@@ -6,8 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 
 /**
@@ -37,6 +40,10 @@ public class LogFilter {
     private String requestUri;
     private String requestPath;
     private String fwmc;//服务名称
+    private MediaType requestMediaType;
+    private MediaType responseMediaType;
+    private HttpHeaders requestHttpHeaders;
+    private HttpHeaders responseHttpHeaders;
     private String requestContentType;
     private String responseContentType;
     private String  requestCharset;//字符集
@@ -51,6 +58,10 @@ public class LogFilter {
     private String requestQueryParams;
     private String requestBody;
     private String responseBody;
+    @Transient
+    private byte[] requestBodyBit;
+    @Transient
+    private byte[] responseBodyBit;
     private long requestBodySize;
     private long responseBodySize;
     private String account;
@@ -59,8 +70,6 @@ public class LogFilter {
     private String errorMessage;
     private String exceptionMessage;
 
-    private int  pageNum;
-    private int pageSize;//
 
 
 

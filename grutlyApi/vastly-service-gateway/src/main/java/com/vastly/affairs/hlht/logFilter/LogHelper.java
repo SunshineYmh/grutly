@@ -1,20 +1,15 @@
 package com.vastly.affairs.hlht.logFilter;
 
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vastly.affairs.hlht.communtion.SpringContextUtil;
-import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.constant.ContentType;
 import com.vastly.affairs.hlht.constant.HeaderConstant;
 import com.vastly.affairs.util.*;
-import com.vastly.ymh.core.affairs.entity.LogFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -27,19 +22,14 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -185,7 +175,7 @@ public class LogHelper {
     public static String reqBodyLog(MinioUtils minioUtils, byte[] RequestBody, MediaType mediaType, HttpHeaders headers){
         String requestBody = "";
         Charset charset =   getMediaTypeCharset(mediaType);
-        //处理请求的文件数据文件上传
+        //处理请求的文件数据文件上传 //处理 form -data 文件数据
         if (MediaType.MULTIPART_FORM_DATA.isCompatibleWith(mediaType)) {
             String wrapperName =  LogHelper.getMediaTypeContentBoundaryType(mediaType);
            return FormDataAnalysisUtil.getMultipartFormData(minioUtils,RequestBody, wrapperName).toString();
@@ -421,7 +411,7 @@ public class LogHelper {
         HttpHeaders headers = new HttpHeaders();
         headers.putAll(request.getHeaders());
         //记录日志
-        final LogFilter logDTO = new LogFilter();
+        LogFilter logDTO = new LogFilter();
         logDTO.setLogType(LogFilter.TYPE.EXCEPTION);
         logDTO.setLevel(LogFilter.LEVEL.ERROR);
         logDTO.setHostName(IpUtils.getHostName());
@@ -459,6 +449,19 @@ public class LogHelper {
         // 计算执行时间
         long executeTime = (responseDate - logDTO.getStartDate());
         logDTO.setExecuteTime(executeTime);
+
+        logDTO.setResponseHeaders(JSONObject.toJSONString(headers.toSingleValueMap()));
+        logDTO.setResponseContentType(LogHelper.getMediaTypeContentType(mediaType));
+        logDTO.setResponseCharset(LogHelper.getMediaTypeCharset(mediaType).toString());
+        logDTO.setResponseMediaType(mediaType);
+        logDTO.setResponseHttpHeaders(headers);
+
+        try {
+            logDTO = HttpRequestLogExchange.ServerHttpRequestwriteBodyLog( exchange,   logDTO);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
         return logDTO;
     }
 

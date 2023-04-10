@@ -3,7 +3,8 @@ package com.vastly.affairs.hlht.resolver;
 import com.alibaba.fastjson.JSONObject;
 import com.vastly.affairs.hlht.exception.vastlyExceptionMessage;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
-import com.vastly.ymh.core.affairs.entity.LogFilter;
+import com.vastly.affairs.hlht.logFilter.HttpRequestLogExchange;
+import com.vastly.affairs.hlht.logFilter.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -61,10 +62,11 @@ public class CustomRequestRateLimiterGatewayFilterFactory extends AbstractGatewa
             String retult = JSONObject.toJSONString(mapmssage.get("body"));
             LogFilter logDTO = LogHelper.respBuildExchangeLog( exchange,  retult, 429 ,"访问已限流，请稍候再请求","");
 
+
             DataBuffer buffer = httpResponse.bufferFactory().wrap(retult.getBytes(StandardCharsets.UTF_8));
             //return httpResponse.writeWith(Mono.just(buffer));
             return httpResponse.writeWith(Flux.just(buffer)).then(Mono.fromRunnable(() -> {
-                                            LogHelper.doRecord(bodyPrintAsyncTask,logDTO,"CustomRequestRateLimiter 限流信息 ### ：");
+                                            LogHelper.doRecord(bodyPrintAsyncTask, logDTO,"CustomRequestRateLimiter 限流信息 ### ：");
                                         }));
         };
     }

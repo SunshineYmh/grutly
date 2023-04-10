@@ -3,7 +3,6 @@ package com.vastly.affairs.hlht.controller;
 
 import com.vastly.affairs.hlht.handler.GatewayServiceHandler;
 import com.vastly.ymh.core.affairs.entity.GatewayRoute;
-import com.vastly.ymh.core.affairs.entity.LogFilter;
 import com.vastly.ymh.hlht.config.dto.DataResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

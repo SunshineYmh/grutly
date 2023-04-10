@@ -1,11 +1,14 @@
 package com.vastly.affairs.hlht.logFilter;
 
+import com.vastly.affairs.util.MinioUtils;
 import com.vastly.affaris.hlht.mongoDB.service.VastlyGatewayLogService;
-import com.vastly.ymh.core.affairs.entity.LogFilter;
+import com.vastly.ymh.core.affairs.entity.LogDbFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +25,9 @@ public class BodyPrintAsyncTask {
 	@Autowired
 	private VastlyGatewayLogService vastlyGatewayLogService;
 
+	@Autowired
+	private MinioUtils minioUtils;
+
 	/**
 	 * 异步报文输出打印
 	 * @param logDTO
@@ -29,6 +35,23 @@ public class BodyPrintAsyncTask {
 	 */
 	@Async
 	public void YjdmAsyncTaskBuss(LogFilter logDTO, String type) {
+		//todo 处理请求
+		if(logDTO.getRequestBodyBit() != null && logDTO.getRequestBodyBit().length>0){
+			logDTO.setRequestBody(LogHelper.reqBodyLog(minioUtils,logDTO.getRequestBodyBit(), logDTO.getRequestMediaType(),logDTO.getRequestHttpHeaders()));
+			logDTO.setResponseBodySize(logDTO.getRequestBodyBit().length);
+			logDTO.setRequestBodyBit(null);
+		}
+
+		//如果是异常结果，不进行处理
+		//todo 处理响应报文
+		if(!logDTO.getLogType().equals(LogFilter.TYPE.EXCEPTION)){
+			if(logDTO.getResponseBodyBit() != null && logDTO.getResponseBodyBit().length>0){
+				logDTO.setResponseBody(LogHelper.respBodyLog(minioUtils,logDTO.getResponseBodyBit(), logDTO.getResponseMediaType(),logDTO.getResponseHttpHeaders()));
+				logDTO.setResponseBodySize(logDTO.getResponseBodyBit().length);
+				logDTO.setResponseBodyBit(null);
+			}
+		}
+
 		if(LogFilter.LEVEL.INFO.equals(logDTO.getLevel())){
 			log.info(type+logDTO.toString());
 		}else if(LogFilter.LEVEL.ERROR.equals(logDTO.getLevel())){
@@ -40,7 +63,9 @@ public class BodyPrintAsyncTask {
 		}else{
 			log.debug(type+logDTO.toString());
 		}
-		vastlyGatewayLogService.logSave(logDTO);
+		LogDbFilter logdb = new LogDbFilter();
+		BeanUtils.copyProperties(logDTO,logdb);
+		vastlyGatewayLogService.logSave(logdb);
 	}
 
 	

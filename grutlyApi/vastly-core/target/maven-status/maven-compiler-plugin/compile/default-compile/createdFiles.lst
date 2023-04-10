@@ -1,10 +1,10 @@
-com\vastly\ymh\core\affairs\entity\LogFilter$TYPE.class
 com\vastly\ymh\core\affairs\entity\GatewayRoute.class
-com\vastly\ymh\core\affairs\entity\LogFilter$LEVEL.class
+com\vastly\ymh\core\affairs\entity\LogDbFilter$TYPE.class
+com\vastly\ymh\core\affairs\entity\LogDbFilter$LEVEL.class
 com\vastly\ymh\hlht\config\dto\ResultJsonUtil.class
 com\vastly\ymh\hlht\config\dto\DataResult.class
 com\vastly\ymh\hlht\config\dto\ResponseCodeConstant.class
 com\vastly\ymh\hlht\config\dto\ResponseMessageConstant.class
 com\vastly\ymh\hlht\config\dto\UtilTools.class
-com\vastly\ymh\core\affairs\entity\LogFilter.class
+com\vastly\ymh\core\affairs\entity\LogDbFilter.class
 com\vastly\ymh\hlht\config\dto\ResponseStatusCodeConstant.class

@@ -2,16 +2,14 @@ package com.vastly.affairs.hlht.filters;
 
 import com.alibaba.fastjson.JSONObject;
 import com.vastly.affairs.hlht.communtion.SpringContextUtil;
-import com.vastly.affairs.hlht.communtion.CacheManager;
 import com.vastly.affairs.hlht.communtion.HttpRequestCommuntion;
 import com.vastly.affairs.hlht.exception.vastlyExceptionMessage;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
 import com.vastly.affairs.util.*;
-import com.vastly.ymh.core.affairs.entity.LogFilter;
+import com.vastly.affairs.hlht.logFilter.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -36,10 +34,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -175,6 +170,11 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
             HttpHeaders headers = new HttpHeaders();
             headers.putAll(request.getHeaders());
             MediaType mediaType = request.getHeaders().getContentType();
+            logDTO.setRequestHeaders(JSONObject.toJSONString(headers.toSingleValueMap()));
+            logDTO.setRequestContentType(LogHelper.getMediaTypeContentType(mediaType));
+            logDTO.setRequestCharset(LogHelper.getMediaTypeCharset(mediaType).toString());
+            logDTO.setRequestMediaType(mediaType);
+            logDTO.setRequestHttpHeaders(headers);
             //获取请求的地址上的参数
             MultiValueMap<String, String> queryParams = exchange.getRequest().getQueryParams();
             if(queryParams.size()>0){
@@ -188,27 +188,22 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                             // 释放资源
                             DataBufferUtils.release(dataBuffer);
 
-                            byte[] newReqBody ;
-                            //处理 form -data 文件数据
-                            if (MediaType.MULTIPART_FORM_DATA.isCompatibleWith(mediaType)) {
-                                newReqBody = bytes;
-                                String wrapperName =  LogHelper.getMediaTypeContentBoundaryType(mediaType);
-                                if(StringUtils.isNotEmpty(wrapperName)){
-                                    JSONObject jsondata = FormDataAnalysisUtil.getMultipartFormData(minioUtils,bytes, wrapperName);
-                                    logDTO.setRequestBody(jsondata.toJSONString());
-                                    logDTO.setResponseBodySize(newReqBody.length);
-                                }
-                            }else{
-                                //todo 请求报文修改
-                                newReqBody = httpRequestCommuntion.ServerBodyBussTask(bytes, mediaType, logDTO.getId(), "request");
-                                headers.remove(HttpHeaders.CONTENT_LENGTH);
-                                logDTO.setRequestBody(LogHelper.reqBodyLog(minioUtils,newReqBody, mediaType,headers));
-                                logDTO.setResponseBodySize(newReqBody.length);
-                            }
+                            System.out.println("-->>>>>>>>>>>>222===="+bytes.length);
+                            //todo 请求报文修改
+                            byte[] newReqBody = httpRequestCommuntion.ServerBodyBussTask(bytes, mediaType, logDTO.getId(), "request");
+                            headers.remove(HttpHeaders.CONTENT_LENGTH);
+                            logDTO.setRequestBodyBit(newReqBody);
+                            logDTO.setRequestBodySize(newReqBody.length);
+
+
                             // 重写原始请求
                             ServerHttpRequestDecorator requestDecorator = serverHttpRequestDecorator(newReqBody, exchange);
                             headers.putAll(requestDecorator.getHeaders());
                             logDTO.setRequestHeaders(JSONObject.toJSONString(headers.toSingleValueMap()));
+                            logDTO.setRequestContentType(LogHelper.getMediaTypeContentType(mediaType));
+                            logDTO.setRequestCharset(LogHelper.getMediaTypeCharset(mediaType).toString());
+                            logDTO.setRequestMediaType(mediaType);
+                            logDTO.setRequestHttpHeaders(headers);
 
                             // 设置响应
                             ServerHttpResponseDecorator decoratedResponse = getServerHttpResponseDecorator(exchange, logDTO);
@@ -275,28 +270,7 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
 
 
 
-    /**
-     * 表单数据处理
-     * @param exchange
-     * @param chain
-     * @param logDTO
-     * @return
-     */
-    private Mono<Void> writeBasicLog(ServerWebExchange exchange, GatewayFilterChain chain, LogFilter logDTO) {
-        MultiValueMap<String, String> queryParams = exchange.getRequest().getQueryParams();
-        Map<String,String> reqdata = queryParams.toSingleValueMap();
-        JSONObject respjson = new JSONObject();
-        reqdata.forEach((k,v)->{
-            respjson.put(k,v);
-        });
-        logDTO.setRequestBody(respjson.toString());
-        //获取响应体
-        ServerHttpResponseDecorator decoratedResponse = getServerHttpResponseDecorator(exchange, logDTO);
-        return chain.filter(exchange.mutate().response(decoratedResponse).build())
-                .then(Mono.fromRunnable(() -> {
-                    LogHelper.doRecord(bodyPrintAsyncTask,logDTO,"HttpRequestFilter writeBasicLog 业务数据 >>>：");
-                }));
-    }
+
 
     /**
      * 响应数据处理
@@ -318,6 +292,8 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
                 logDTO.setResponseHeaders(JSONObject.toJSONString(responseHeaders.toSingleValueMap()));
                 logDTO.setResponseContentType(LogHelper.getMediaTypeContentType(mediaType));
                 logDTO.setResponseCharset(LogHelper.getMediaTypeCharset(mediaType).toString());
+                logDTO.setResponseMediaType(mediaType);
+                logDTO.setResponseHttpHeaders(responseHeaders);
                 logDTO.setStatus(httpStatus.value());
                 log.info(logDTO.getId()+" :响应信息处理》》》》》》》》》》》》》》》");
                 long responseDate = System.currentTimeMillis();
@@ -338,7 +314,8 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
 
                         // 响应报文特殊处理
                         byte[] newRespBody = httpRequestCommuntion.ServerBodyBussTask(content, mediaType, logDTO.getId(), "response");
-                        logDTO.setResponseBody(LogHelper.respBodyLog(minioUtils,newRespBody, mediaType,responseHeaders));
+                        //logDTO.setResponseBody(LogHelper.respBodyLog(minioUtils,newRespBody, mediaType,responseHeaders));
+                        logDTO.setResponseBodyBit(newRespBody);
                         logDTO.setResponseBodySize(newRespBody.length);
 
                         return bufferFactory.wrap(newRespBody);
@@ -425,3 +402,26 @@ public class HttpRequestFilter implements GlobalFilter, Ordered {
 //                                        requestDecorator.getURI());
 //                                System.out.println("-->>>33>>"+serverHttpRequestsend.getURI().toString());
 
+//    /**
+//     * 表单数据处理
+//     * @param exchange
+//     * @param chain
+//     * @param logDTO
+//     * @return
+//     */
+//    private Mono<Void> writeBasicLog(ServerWebExchange exchange, GatewayFilterChain chain, LogFilter logDTO) {
+//        MultiValueMap<String, String> queryParams = exchange.getRequest().getQueryParams();
+//        Map<String,String> reqdata = queryParams.toSingleValueMap();
+//        JSONObject respjson = new JSONObject();
+//        reqdata.forEach((k,v)->{
+//            respjson.put(k,v);
+//        });
+//        logDTO.setRequestBody(respjson.toString());
+//        //获取响应体
+//        ServerHttpResponseDecorator decoratedResponse = getServerHttpResponseDecorator(exchange, logDTO);
+//        return chain.filter(exchange.mutate().response(decoratedResponse).build())
+//                .then(Mono.fromRunnable(() -> {
+//                    LogHelper.doRecord(bodyPrintAsyncTask,logDTO,"HttpRequestFilter writeBasicLog 业务数据 >>>：",
+//                            mediaType,  headers);
+//                }));
+//    }

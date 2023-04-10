@@ -1,6 +1,8 @@
 package com.vastly.affaris.hlht.mongoDB.service;
 
-import com.vastly.ymh.core.affairs.entity.LogFilter;
+
+
+import com.vastly.ymh.core.affairs.entity.LogDbFilter;
 import com.vastly.ymh.hlht.config.dto.DataResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -26,8 +28,8 @@ public class VastlyGatewayLogService {
      * 保存日志
      * @param logDto
      */
-    public void logSave(LogFilter logDto){
-        LogFilter result = mongoTemplate.save(logDto);
+    public void logSave(LogDbFilter logDto){
+        LogDbFilter result = mongoTemplate.save(logDto);
         if(result != null){
             DataResult.success();
         }else{
@@ -40,8 +42,8 @@ public class VastlyGatewayLogService {
      * 根据 id查询
      * @param logDto
      */
-    public void getLogById(LogFilter logDto){
-        LogFilter result = mongoTemplate.findById(logDto.getId(),LogFilter.class);
+    public void getLogById(LogDbFilter logDto){
+        LogDbFilter result = mongoTemplate.findById(logDto.getId(),LogDbFilter.class);
         if(result != null){
             DataResult.success(result);
         }else{
@@ -49,7 +51,7 @@ public class VastlyGatewayLogService {
         }
     }
 
-    public DataResult getLogQuery(LogFilter logDto){
+    public DataResult getLogQuery(LogDbFilter logDto){
 
         // 创建查询对象，然后将条件对象添加到其中
         //根据id字段来排序,如果想根据多个字段进行排序,可以在str字符串数组中添加字段
@@ -98,10 +100,10 @@ public class VastlyGatewayLogService {
         }
         log.info("查询sql【"+query.toString()+"】");
         //查询总数
-        Long count = mongoTemplate.count(query,LogFilter.class);
+        Long count = mongoTemplate.count(query,LogDbFilter.class);
         log.info("查询count="+count);
         if(count != null && count >0){
-            List<LogFilter> result = mongoTemplate.find(query,LogFilter.class);
+            List<LogDbFilter> result = mongoTemplate.find(query,LogDbFilter.class);
             return DataResult.success(result,count);
         }else{
             return DataResult.error(404,"未找到相关数据！");

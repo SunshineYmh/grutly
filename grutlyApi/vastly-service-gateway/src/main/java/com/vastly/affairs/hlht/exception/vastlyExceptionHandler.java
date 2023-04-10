@@ -4,7 +4,8 @@ package com.vastly.affairs.hlht.exception;
 import com.alibaba.fastjson.JSONObject;
 import com.vastly.affairs.hlht.communtion.SpringContextUtil;
 import com.vastly.affairs.hlht.logFilter.BodyPrintAsyncTask;
-import com.vastly.ymh.core.affairs.entity.LogFilter;
+import com.vastly.affairs.hlht.logFilter.HttpRequestLogExchange;
+import com.vastly.affairs.hlht.logFilter.LogFilter;
 import com.vastly.affairs.hlht.logFilter.LogHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,6 +38,7 @@ import java.io.PrintStream;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -140,23 +142,32 @@ public class vastlyExceptionHandler implements ErrorWebExceptionHandler {
         HttpHeaders responseHeaders = originalResponse.getHeaders();
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
 
+
         Map<String, Object> mapmssage = vastlyExceptionMessage.responseBuildMessage(code, request, ex,errorMessage,httpStatus);
         String responseBody = JSONObject.toJSONString(mapmssage.get("body"));
 
 
         LogFilter logDTO = LogHelper.respBuildExchangeLog( exchange,  responseBody, code, (String) mapmssage.get("errorMessage"),exceptionMessage);
+
         //参考AbstractErrorWebExceptionHandler
         if (exchange.getResponse().isCommitted()) {
             return Mono.error(ex);
         }
-        exceptionHandlerResult.set(mapmssage);
-        ServerRequest newRequest = ServerRequest.create(exchange, this.messageReaders);
-        return RouterFunctions.route(RequestPredicates.all(), this::renderErrorResponse).route(newRequest)
-                .switchIfEmpty(Mono.error(ex))
-                .flatMap((handler) -> handler.handle(newRequest))
-                .flatMap((response) -> write(exchange, response)).then(Mono.fromRunnable(() -> {
-                    LogHelper.doRecord(bodyPrintAsyncTask,logDTO,"服务异常：");
-                }));
+
+        DataBuffer buffer = originalResponse.bufferFactory().wrap(responseBody.getBytes(StandardCharsets.UTF_8));
+        //return httpResponse.writeWith(Mono.just(buffer));
+        return originalResponse.writeWith(Flux.just(buffer)).then(Mono.fromRunnable(() -> {
+            LogHelper.doRecord(bodyPrintAsyncTask, logDTO,"服务异常 ###：");
+        }));
+
+//        exceptionHandlerResult.set(mapmssage);
+//        ServerRequest newRequest = ServerRequest.create(exchange, this.messageReaders);
+//        return RouterFunctions.route(RequestPredicates.all(), this::renderErrorResponse).route(newRequest)
+//                .switchIfEmpty(Mono.error(ex))
+//                .flatMap((handler) -> handler.handle(newRequest))
+//                .flatMap((response) -> write(exchange, response)).then(Mono.fromRunnable(() -> {
+//                    LogHelper.doRecord(bodyPrintAsyncTask, logDTO,"服务异常 ###：");
+//                }));
 
     }
 

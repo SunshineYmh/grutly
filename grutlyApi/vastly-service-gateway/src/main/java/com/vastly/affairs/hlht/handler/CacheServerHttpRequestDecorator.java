@@ -3,7 +3,7 @@
 //
 //import com.alibaba.fastjson.JSONObject;
 //import com.vastly.affairs.hlht.communtion.CacheManager;
-//import com.vastly.ymh.core.affairs.entity.LogFilter;
+//import com.vastly.affairs.hlht.logFilter.LogFilter;
 //import com.vastly.affairs.hlht.logFilter.LogHelper;
 //import io.netty.buffer.UnpooledByteBufAllocator;
 //import lombok.extern.slf4j.Slf4j;
