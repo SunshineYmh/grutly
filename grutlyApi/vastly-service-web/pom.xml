@@ -1,0 +1,44 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.vastly.ymh</groupId>
+    <artifactId>vastly-service-web</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <name>vastly-service-web</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/com.baomidou/dynamic-datasource-spring-boot-starter -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
+            <version>3.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vastly.ymh</groupId>
+            <artifactId>vastly-core</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+    </dependencies>
+    <distributionManagement>
+        <repository>
+            <id>YUNRelease</id>
+            <name>YUN</name>
+            <url>http://222.222.216.74:10001/nexus/content/repositories/YUNRelease</url>
+        </repository>
+        <snapshotRepository>
+            <id>YUNSnapshots</id>
+            <name>YUN</name>
+            <url>http://222.222.216.74:10001/nexus/content/repositories/YUNSnapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+</project>
